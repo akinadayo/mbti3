@@ -291,9 +291,8 @@
 
         /* Back Button */
         .back-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
+            display: block;
+            margin: 20px auto 0;
             background: rgba(0, 255, 255, 0.15);
             border: 2px solid var(--accent-primary);
             border-radius: 8px;
@@ -330,23 +329,43 @@
             justify-content: center;
         }
 
+        /* Loading Overlay */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(25, 30, 55, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader-overlay.show {
+            display: flex;
+        }
+
         /* Loading Spinner */
         .loader {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(0, 255, 255, 0.2);
+            width: 80px;
+            height: 80px;
+            border: 5px solid rgba(0, 255, 255, 0.2);
             border-top-color: var(--accent-primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            display: none;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
-            z-index: 1000;
-            background: rgba(25, 30, 55, 0.9);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+        }
+
+        .loader-text {
+            position: absolute;
+            margin-top: 120px;
+            color: var(--accent-primary);
+            font-family: 'Exo 2', sans-serif;
+            font-size: 18px;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
         }
 
         @keyframes spin {
@@ -592,7 +611,10 @@
         
     </div>
     
-    <div class="loader" id="loader"></div>
+    <div class="loader-overlay" id="loader">
+        <div class="loader"></div>
+        <div class="loader-text">分析中...</div>
+    </div>
     <div class="toast" id="toast"></div>
     
 
@@ -765,11 +787,11 @@ GitHub Actionsでの自動注入が動作していません。
 
         // Show/hide loader
         function showLoader() {
-            document.getElementById('loader').style.display = 'block';
+            document.getElementById('loader').classList.add('show');
         }
 
         function hideLoader() {
-            document.getElementById('loader').style.display = 'none';
+            document.getElementById('loader').classList.remove('show');
         }
 
         // Show toast notification
@@ -1075,8 +1097,8 @@ GitHub Actionsでの自動注入が動作していません。
                         {
                             role: "system",
                             content: `あなたはウィットに富み、やや皮肉も効かせつつも洞察力に満ちた組織コンサルタントです。
-MBTI相性の研究結果を参考に、以下の2名の関係性を日本語で300-400字程度で描写してください。
-ユーモアを交えながらも本質的な洞察を含めること。
+MBTI相性の研究結果を参考に、以下の2名の関係性を日本語で300-400字程度で描写してください。なるべく初心者にもわかるように難しい単語を使わないようにしてください。
+ユーモアを交えながらも本質的な洞察を含めること。クスッと笑えるような部分も追加してださい
 関係性の強み、潜在的な摩擦点、協力する際のヒントを含めてください。
 重要：必ず具体的なメンバーの名前を使って説明してください。「INTJが〜」ではなく「田中さん（INTJ）が〜」のように記述すること。
 [cnbc.com](https://www.cnbc.com/2025/08/01/human-ai-relationships-love-nomi.html)や[truity.com](https://www.truity.com/type-relationship-advisor/E/N/T/J/I/N/T/P)のような相性分析を参考に。`
@@ -1102,9 +1124,9 @@ MBTI相性の研究結果を参考に、以下の2名の関係性を日本語で
             const summaryContent = summaryPanel.querySelector('.summary-content');
             
             summaryContent.innerHTML = `
-                <button class="back-button" id="back-to-main">← チーム全体に戻る</button>
                 <div class="team-name">${source.name} × ${target.name}</div>
                 <div style="white-space: pre-line;">${content}</div>
+                <button class="back-button" id="back-to-main">← チーム全体に戻る</button>
             `;
             
             // Add event listener to the back button
