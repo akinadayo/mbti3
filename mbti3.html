@@ -545,16 +545,6 @@
     <div class="toast" id="toast"></div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script>
-        // config.jsの読み込みエラーを無視（GitHub Pages対応）
-        window.onerror = function(msg, url, line, col, error) {
-            if (url && url.includes('config.js')) {
-                console.log('config.jsが見つかりません。GitHub Pagesモードで動作します。');
-                return true; // エラーを抑制
-            }
-        };
-    </script>
-    <script src="config.js" onerror="console.log('config.js not found - using GitHub Pages mode')"></script>
     <script type="module">
         // Background particle animation
         const canvas = document.getElementById('bg-canvas');
@@ -650,8 +640,10 @@
          * OpenRouter 経由で Horizon Alpha (openrouter/horizon-alpha) を呼び出す
          */
         async function callHorizonAlpha(messages) {
-            // APIキーの確認
-            if (!window.API_CONFIG || !window.API_CONFIG.OPENROUTER_API_KEY) {
+            // APIキーの取得（GitHub Actionsで注入される）
+            const apiKey = "{{OPENROUTER_API_KEY}}";
+            
+            if (!apiKey || apiKey === "{{OPENROUTER_API_KEY}}") {
                 throw new Error('APIキーが設定されていません。GitHub SecretsでOPENROUTER_API_KEYを設定してください。');
             }
             
@@ -659,7 +651,7 @@
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${window.API_CONFIG.OPENROUTER_API_KEY}`
+                    "Authorization": `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
                     model: "openrouter/horizon-beta",
