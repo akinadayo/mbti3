@@ -123,9 +123,12 @@
             grid-column: 1;
             grid-row: 1;
             overflow-y: auto;
+            height: 100%;
             max-height: calc(100vh - 160px);
             scrollbar-width: thin;
             scrollbar-color: var(--accent-primary) transparent;
+            display: flex;
+            flex-direction: column;
         }
         
         #input-panel::-webkit-scrollbar {
@@ -236,6 +239,7 @@
             grid-row: 1;
             display: flex;
             flex-direction: column;
+            height: 100%;
         }
 
         #graph-container {
@@ -285,6 +289,34 @@
             letter-spacing: 2px;
         }
 
+        /* Back Button */
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid var(--accent-primary);
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: var(--accent-primary);
+            font-family: 'Exo 2', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .back-button:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .back-button:active {
+            transform: translateY(0);
+        }
+
         /* Radar Chart Container */
         #radar-chart {
             width: 450px;
@@ -298,9 +330,10 @@
 
         /* Loading Spinner */
         .loader {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
+            position: absolute;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
             width: 50px;
             height: 50px;
             border: 3px solid transparent;
@@ -309,6 +342,7 @@
             animation: spin 1s linear infinite;
             display: none;
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            z-index: 10;
         }
 
         @keyframes spin {
@@ -317,9 +351,10 @@
 
         /* Toast Notification */
         .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
+            position: absolute;
+            bottom: -120px;
+            left: 50%;
+            transform: translateX(-50%);
             background: var(--panel-bg);
             backdrop-filter: blur(12px);
             border: 1px solid var(--accent-secondary);
@@ -328,17 +363,19 @@
             color: var(--text-primary);
             font-family: 'Exo 2', sans-serif;
             display: none;
-            animation: slideIn 0.5s ease-out;
+            animation: slideInUp 0.5s ease-out;
             box-shadow: 0 0 30px rgba(255, 0, 191, 0.5);
+            z-index: 10;
+            white-space: nowrap;
         }
 
-        @keyframes slideIn {
+        @keyframes slideInUp {
             from {
-                transform: translateX(100%);
+                transform: translate(-50%, 20px);
                 opacity: 0;
             }
             to {
-                transform: translateX(0);
+                transform: translate(-50%, 0);
                 opacity: 1;
             }
         }
@@ -549,10 +586,10 @@
             <div class="summary-content"></div>
         </div>
         
+        <div class="loader" id="loader"></div>
+        <div class="toast" id="toast"></div>
+        
     </div>
-    
-    <div class="loader" id="loader"></div>
-    <div class="toast" id="toast"></div>
     
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -646,6 +683,7 @@
         let teamData = [];
         let graphData = null;
         let simulation = null;
+        let mainTeamAnalysis = null; // Store main team analysis to prevent regeneration
 
         /**
          * OpenRouter 経由で Horizon Alpha (openrouter/horizon-alpha) を呼び出す
@@ -1060,12 +1098,27 @@ MBTI相性の研究結果を参考に、以下の2名の関係性を日本語で
             const summaryContent = summaryPanel.querySelector('.summary-content');
             
             summaryContent.innerHTML = `
+                <button class="back-button" onclick="showMainAnalysis()">← チーム全体に戻る</button>
                 <div class="team-name">${source.name} × ${target.name}</div>
                 <div style="white-space: pre-line;">${content}</div>
             `;
             
             summaryPanel.style.display = 'block';
             summaryPanel.style.animation = 'fadeInScale 0.5s ease-out';
+        }
+
+        // Show main team analysis without regeneration
+        function showMainAnalysis() {
+            if (mainTeamAnalysis) {
+                const summaryPanel = document.getElementById('summary-panel');
+                const summaryContent = summaryPanel.querySelector('.summary-content');
+                
+                // Clear any selected edges
+                d3.selectAll('.link').classed('selected', false);
+                
+                summaryContent.innerHTML = mainTeamAnalysis;
+                summaryPanel.style.animation = 'fadeInScale 0.5s ease-out';
+            }
         }
 
         // Create radar chart
@@ -1386,6 +1439,7 @@ MBTI相性の研究結果を参考に、以下の2名の関係性を日本語で
                 });
                 
                 summaryContent.innerHTML = formattedContent;
+                mainTeamAnalysis = formattedContent; // Store for back button functionality
                 summaryPanel.style.display = 'block';
                 
                 showToast('分析が完了しました! ✨');
