@@ -652,12 +652,44 @@
          */
         async function callHorizonAlpha(messages) {
             // APIキーの取得（GitHub Actionsで自動注入される）
-            const apiKey = "{{OPENROUTER_API_KEY}}";
+            let apiKey = "{{OPENROUTER_API_KEY}}";
             
+            // プレースホルダーが残っている場合のフォールバック
             if (!apiKey || apiKey === "{{OPENROUTER_API_KEY}}") {
-                const errorMsg = 'APIキーが設定されていません。GitHub SecretsでOPENROUTER_API_KEYを設定してください。';
-                showToast('❌ ' + errorMsg);
-                throw new Error(errorMsg);
+                // デバッグ情報を表示
+                console.warn('プレースホルダーが残っています。GitHub Actionsでの注入が失敗した可能性があります。');
+                
+                // 現在の状況をアラートで表示
+                alert(`デバッグ情報:
+                
+現在のAPIキー値: "${apiKey}"
+                
+GitHub Actionsでの自動注入が正常に動作していません。
+                
+次の手順を確認してください:
+1. GitHub Secret (OPENROUTER_API_KEY) が設定されているか
+2. 最新のコードがプッシュされているか
+3. GitHub Actionsが正常に実行されているか`);
+                
+                // 一時的にプロンプトで入力を求める
+                apiKey = prompt('APIキーを入力してください (GitHub Secretsの設定後は不要になります):');
+                
+                if (!apiKey) {
+                    const errorMsg = `GitHub SecretsでOPENROUTER_API_KEYを設定してください。
+
+設定手順:
+1. リポジトリの Settings → Secrets and variables → Actions
+2. New repository secret をクリック
+3. Name: OPENROUTER_API_KEY
+4. Secret: あなたのOpenRouter APIキー
+5. プッシュして再デプロイ`;
+                    showToast('❌ APIキーが必要です');
+                    throw new Error(errorMsg);
+                }
+                
+                // 入力されたAPIキーをlocalStorageに保存（次回用）
+                localStorage.setItem('temp_api_key', apiKey);
+                showToast('✅ 一時的にAPIキーを設定しました。GitHub Secretsの設定をお忘れなく！');
             }
             
             const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
