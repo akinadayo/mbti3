@@ -1632,7 +1632,11 @@ MBTI相性の研究結果を参考に、以下の2名の関係性を日本語で
                 // Display summary with better formatting
                 const summaryPanel = document.getElementById('summary-panel');
                 const summaryContent = summaryPanel.querySelector('.summary-content');
-                const cleanedAnalysis = teamAnalysis.replace(/```json[\s\S]*?```/, '').trim();
+                // Remove JSON blocks and score sections from display
+                const cleanedAnalysis = teamAnalysis
+                    .replace(/```json[\s\S]*?```/g, '')
+                    .replace(/=== スコア ===[\s\S]*?=== スコア終了 ===/g, '')
+                    .trim();
                 
                 // Parse analysis sections
                 const sections = cleanedAnalysis.split(/\n(?=\d\.\s)/g);
