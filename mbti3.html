@@ -543,6 +543,16 @@
     <div class="toast" id="toast"></div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // config.jsの読み込みエラーを無視（GitHub Pages対応）
+        window.onerror = function(msg, url, line, col, error) {
+            if (url && url.includes('config.js')) {
+                console.log('config.jsが見つかりません。GitHub Pagesモードで動作します。');
+                return true; // エラーを抑制
+            }
+        };
+    </script>
+    <script src="config.js" onerror="console.log('config.js not found - using GitHub Pages mode')"></script>
     <script type="module">
         // Background particle animation
         const canvas = document.getElementById('bg-canvas');
@@ -638,11 +648,34 @@
          * OpenRouter 経由で Horizon Alpha (openrouter/horizon-alpha) を呼び出す
          */
         async function callHorizonAlpha(messages) {
+            // APIキーの確認（config.js または localStorage から）
+            let apiKey = null;
+            
+            // まずconfig.jsから取得を試す
+            if (window.API_CONFIG && window.API_CONFIG.OPENROUTER_API_KEY) {
+                apiKey = window.API_CONFIG.OPENROUTER_API_KEY;
+            }
+            // 次にlocalStorageから取得を試す（GitHub Pages用）
+            else if (localStorage.getItem('OPENROUTER_API_KEY')) {
+                apiKey = localStorage.getItem('OPENROUTER_API_KEY');
+            }
+            
+            if (!apiKey) {
+                const errorMsg = `
+APIキーが設定されていません。以下の方法で設定してください：
+
+方法1（ローカル）: config.jsファイルを確認
+方法2（GitHub Pages）: ブラウザのコンソールで以下を実行
+localStorage.setItem('OPENROUTER_API_KEY', 'your-api-key-here');
+                `.trim();
+                throw new Error(errorMsg);
+            }
+            
             const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": "Bearer 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"
+                    "Authorization": `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
                     model: "openrouter/horizon-beta",
