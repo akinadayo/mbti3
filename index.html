@@ -49,6 +49,7 @@
             height: 100%;
             z-index: -1;
             opacity: 0.3;
+            pointer-events: none;
         }
 
         /* Container Layout */
@@ -61,6 +62,8 @@
             min-height: 100vh;
             max-width: 1800px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         /* Glassmorphic Panels */
@@ -72,6 +75,7 @@
             border-radius: 20px;
             padding: 32px;
             position: relative;
+            z-index: 5;
             animation: fadeInScale 0.8s ease-out forwards;
             box-shadow: 0 12px 48px rgba(0, 255, 255, 0.15),
                         inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -163,6 +167,8 @@
             font-family: 'Roboto', sans-serif;
             font-size: 15px;
             transition: all 0.3s ease;
+            position: relative;
+            z-index: 8;
         }
 
         input:focus, select:focus {
@@ -195,6 +201,9 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
         }
 
         button:hover {
@@ -480,6 +489,7 @@
             }
         }
         
+        
     </style>
 </head>
 <body>
@@ -543,6 +553,7 @@
     
     <div class="loader" id="loader"></div>
     <div class="toast" id="toast"></div>
+    
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script type="module">
@@ -640,11 +651,13 @@
          * OpenRouter 経由で Horizon Alpha (openrouter/horizon-alpha) を呼び出す
          */
         async function callHorizonAlpha(messages) {
-            // APIキーの取得（GitHub Actionsで注入される）
+            // APIキーの取得（GitHub Actionsで自動注入される）
             const apiKey = "{{OPENROUTER_API_KEY}}";
             
             if (!apiKey || apiKey === "{{OPENROUTER_API_KEY}}") {
-                throw new Error('APIキーが設定されていません。GitHub SecretsでOPENROUTER_API_KEYを設定してください。');
+                const errorMsg = 'APIキーが設定されていません。GitHub SecretsでOPENROUTER_API_KEYを設定してください。';
+                showToast('❌ ' + errorMsg);
+                throw new Error(errorMsg);
             }
             
             const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -683,9 +696,19 @@
                 toast.style.display = 'none';
             }, 3000);
         }
+        
 
         // Add member functionality
-        document.getElementById('add-member').addEventListener('click', () => {
+        console.log('Setting up add-member button listener');
+        const addMemberBtn = document.getElementById('add-member');
+        if (!addMemberBtn) {
+            console.error('Add member button not found!');
+        } else {
+            console.log('Add member button found, adding event listener');
+        }
+        
+        document.getElementById('add-member').addEventListener('click', (e) => {
+            console.log('Add member button clicked');
             if (memberCount >= 20) {
                 showToast('チームメンバーは最大20名までです 🚫');
                 return;
@@ -1128,7 +1151,16 @@ MBTI相性の研究結果を参考に、以下の2名の関係性を日本語で
         }
 
         // Analyze team
-        document.getElementById('analyze-btn').addEventListener('click', async () => {
+        console.log('Setting up analyze button listener');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        if (!analyzeBtn) {
+            console.error('Analyze button not found!');
+        } else {
+            console.log('Analyze button found, adding event listener');
+        }
+        
+        document.getElementById('analyze-btn').addEventListener('click', async (e) => {
+            console.log('Analyze button clicked');
             teamData = collectTeamData();
             
             if (teamData.length < 2) {

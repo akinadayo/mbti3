@@ -81,10 +81,10 @@
 
 ## セキュリティ
 
-- `config.js` は `.gitignore` に含まれており、Gitリポジトリにコミットされません
-- APIキーは設定ファイルまたはlocalStorageから分離管理
-- GitHub Pages使用時はlocalStorageでAPIキーを管理
-- 本番環境では適切な環境変数管理を推奨します
+- APIキーはGitHub Secretsで安全に管理
+- デプロイ時にGitHub ActionsがHTMLファイルに自動注入
+- ソースコードには実際のAPIキーは含まれません
+- プレースホルダー方式で安全な自動デプロイを実現
 
 ## 注意事項
 

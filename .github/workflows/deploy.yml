@@ -38,9 +38,27 @@ jobs:
             exit 1
           fi
           
-          # Make script executable and run it
-          chmod +x scripts/inject-api-key.sh
-          ./scripts/inject-api-key.sh "${{ secrets.OPENROUTER_API_KEY }}" index.html
+          echo "🔍 Before injection:"
+          grep -n "{{OPENROUTER_API_KEY}}" index.html || echo "Placeholder not found"
+          
+          # Use sed to replace the placeholder directly
+          sed -i 's/{{OPENROUTER_API_KEY}}/${{ secrets.OPENROUTER_API_KEY }}/g' index.html
+          
+          echo "✅ After injection:"
+          # Check if placeholder still exists (should not)
+          if grep -q "{{OPENROUTER_API_KEY}}" index.html; then
+            echo "❌ Error: Placeholder still exists!"
+            exit 1
+          else
+            echo "✅ API key successfully injected"
+          fi
+          
+          # Verify API key pattern exists
+          if grep -q "sk-or-v1-" index.html; then
+            echo "✅ API key pattern found in file"
+          else
+            echo "⚠️ Warning: Expected API key pattern not found"
+          fi
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
