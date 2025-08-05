@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Team Dynamics Visualizer: Project Chimera</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&family=Roboto:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: rgb(10, 12, 28);
+            --accent-primary: rgb(0, 255, 255);
+            --accent-secondary: rgb(255, 0, 191);
+            --panel-bg: rgba(25, 30, 55, 0.6);
+            --text-primary: rgb(220, 220, 240);
+            --border-glow: rgba(0, 255, 255, 0.4);
+            
+            --cluster-sj: #00aaff;
+            --cluster-sp: #ffaa00;
+            --cluster-nf: #00cc88;
+            --cluster-nt: #aa55ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        /* Background Animation */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        /* Container Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            grid-template-rows: 1fr auto;
+            gap: 30px;
+            padding: 30px;
+            min-height: 100vh;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Glassmorphic Panels */
+        .panel {
+            background: rgba(25, 30, 55, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            padding: 32px;
+            position: relative;
+            animation: fadeInScale 0.8s ease-out forwards;
+            box-shadow: 0 12px 48px rgba(0, 255, 255, 0.15),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent-primary);
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 32px;
+            text-align: center;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            letter-spacing: 1px;
+        }
+
+        /* Input Panel */
+        #input-panel {
+            grid-column: 1;
+            grid-row: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 160px);
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-primary) transparent;
+        }
+        
+        #input-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #input-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        #input-panel::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
+            opacity: 0.5;
+        }
+
+        .member-input {
+            background: rgba(0, 255, 255, 0.08);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .member-input:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--text-primary);
+            border-radius: 8px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        }
+
+        label {
+            display: block;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--accent-primary);
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Buttons */
+        button {
+            padding: 12px 24px;
+            margin: 8px 0;
+            background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 8px;
+            color: var(--bg-primary);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 255, 0.6);
+        }
+
+        #add-member {
+            width: 100%;
+            background: rgba(0, 255, 255, 0.2);
+            color: var(--accent-primary);
+            border: 1px solid var(--accent-primary);
+        }
+
+        #analyze-btn {
+            width: 100%;
+            font-size: 1.2rem;
+            padding: 16px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 0, 191, 0.8); }
+        }
+
+        /* Graph Panel */
+        #graph-panel {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #graph-container {
+            flex: 1;
+            position: relative;
+            min-height: 500px;
+        }
+
+        /* Summary Panel */
+        #summary-panel {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            min-height: 300px;
+            transition: all 0.5s ease;
+        }
+
+        .summary-content {
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+            line-height: 1.8;
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.95);
+        }
+        
+        .analysis-section {
+            margin-bottom: 32px;
+            padding: 24px;
+            background: rgba(0, 255, 255, 0.03);
+            border-left: 3px solid var(--accent-primary);
+            border-radius: 8px;
+        }
+        
+        .analysis-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            color: var(--accent-primary);
+            margin-bottom: 12px;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+
+        .team-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            color: var(--accent-secondary);
+            text-shadow: 0 0 40px rgba(255, 0, 191, 0.8);
+            margin-bottom: 32px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        /* Radar Chart Container */
+        #radar-chart {
+            width: 450px;
+            height: 450px;
+            margin: 30px auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--accent-secondary);
+            border-radius: 8px;
+            padding: 16px 24px;
+            color: var(--text-primary);
+            font-family: 'Exo 2', sans-serif;
+            display: none;
+            animation: slideIn 0.5s ease-out;
+            box-shadow: 0 0 30px rgba(255, 0, 191, 0.5);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Graph Styles */
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .node:hover {
+            filter: brightness(1.3);
+        }
+
+        .node-image {
+            stroke-width: 3;
+            fill: none;
+            filter: drop-shadow(0 0 10px currentColor);
+        }
+
+        .node-label {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 14px;
+            text-anchor: middle;
+            fill: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+        }
+
+        .link {
+            fill: none;
+            stroke: var(--accent-primary);
+            stroke-opacity: 0.6;
+            stroke-width: 2;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .link:hover {
+            stroke-opacity: 1;
+            stroke-width: 4;
+            filter: drop-shadow(0 0 15px currentColor);
+        }
+
+        .link.selected {
+            stroke-width: 5;
+            stroke-opacity: 1;
+            filter: drop-shadow(0 0 25px currentColor);
+            animation: linkPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes linkPulse {
+            0%, 100% { stroke-opacity: 1; }
+            50% { stroke-opacity: 0.7; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 20px;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            #input-panel {
+                grid-column: 1;
+                grid-row: 1;
+                max-height: none;
+            }
+            
+            #graph-panel {
+                grid-column: 1;
+                grid-row: 2;
+                min-height: 400px;
+            }
+            
+            #summary-panel {
+                grid-column: 1;
+                grid-row: 3;
+            }
+            
+            #radar-chart {
+                width: 320px;
+                height: 320px;
+            }
+            
+            .panel {
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+                letter-spacing: 1px;
+            }
+            
+            .container {
+                padding: 15px;
+                gap: 15px;
+            }
+            
+            .panel {
+                padding: 16px;
+                border-radius: 12px;
+            }
+            
+            button {
+                font-size: 0.9rem;
+                padding: 10px 20px;
+            }
+            
+            input, select {
+                font-size: 14px;
+                padding: 10px 12px;
+            }
+            
+            .analysis-section {
+                padding: 16px;
+            }
+            
+            .team-name {
+                font-size: 1.8rem;
+            }
+            
+            #radar-chart {
+                width: 280px;
+                height: 280px;
+                margin: 20px auto;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #radar-chart {
+                width: 250px;
+                height: 250px;
+                margin: 15px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    
+    <h1>MBTI Team Dynamics Visualizer: Project Chimera</h1>
+    
+    <div class="container">
+        <div id="input-panel" class="panel">
+            <h2>チームメンバー</h2>
+            <div id="members-container">
+                <div class="member-input">
+                    <label>名前</label>
+                    <input type="text" class="member-name" placeholder="田中太郎">
+                    
+                    <label>MBTI</label>
+                    <select class="member-mbti">
+                        <option value="">選択してください</option>
+                        <option value="INTJ">INTJ - 建築家</option>
+                        <option value="INTP">INTP - 論理学者</option>
+                        <option value="ENTJ">ENTJ - 指揮官</option>
+                        <option value="ENTP">ENTP - 討論者</option>
+                        <option value="INFJ">INFJ - 提唱者</option>
+                        <option value="INFP">INFP - 仲介者</option>
+                        <option value="ENFJ">ENFJ - 主人公</option>
+                        <option value="ENFP">ENFP - 広報運動家</option>
+                        <option value="ISTJ">ISTJ - 管理者</option>
+                        <option value="ISFJ">ISFJ - 擁護者</option>
+                        <option value="ESTJ">ESTJ - 幹部</option>
+                        <option value="ESFJ">ESFJ - 領事</option>
+                        <option value="ISTP">ISTP - 巨匠</option>
+                        <option value="ISFP">ISFP - 冒険家</option>
+                        <option value="ESTP">ESTP - 起業家</option>
+                        <option value="ESFP">ESFP - エンターテイナー</option>
+                    </select>
+                    
+                    <label>役職/偉さ (1-5)</label>
+                    <input type="number" class="member-rank" min="1" max="5" value="3">
+                    
+                    <label>写真URL (オプション)</label>
+                    <input type="url" class="member-photo" placeholder="https://example.com/photo.jpg">
+                </div>
+            </div>
+            
+            <button id="add-member">+ メンバーを追加</button>
+            <button id="analyze-btn">🚀 チームを分析（Analyze Team）</button>
+        </div>
+        
+        <div id="graph-panel" class="panel">
+            <h2>チームダイナミクス</h2>
+            <div id="graph-container"></div>
+        </div>
+        
+        <div id="summary-panel" class="panel" style="display: none;">
+            <h2>分析結果</h2>
+            <div id="radar-chart"></div>
+            <div class="summary-content"></div>
+        </div>
+    </div>
+    
+    <div class="loader" id="loader"></div>
+    <div class="toast" id="toast"></div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script type="module">
+        // Background particle animation
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        const particles = [];
+        const particleCount = 50;
+        
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                size: Math.random() * 3 + 1
+            });
+        }
+        
+        function animateBackground() {
+            ctx.fillStyle = 'rgba(10, 12, 28, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.2)';
+            ctx.lineWidth = 0.5;
+            
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 255, 255, ${0.5 + Math.sin(Date.now() * 0.001 + i) * 0.3})`;
+                ctx.fill();
+                
+                particles.forEach((p2, j) => {
+                    if (i < j) {
+                        const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                        if (dist < 150) {
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.globalAlpha = (150 - dist) / 150 * 0.2;
+                            ctx.stroke();
+                            ctx.globalAlpha = 1;
+                        }
+                    }
+                });
+            });
+            
+            requestAnimationFrame(animateBackground);
+        }
+        
+        animateBackground();
+
+        // MBTI cluster mapping
+        const mbtiClusters = {
+            'ISTJ': { cluster: 'SJ', color: '#00aaff' },
+            'ISFJ': { cluster: 'SJ', color: '#00aaff' },
+            'ESTJ': { cluster: 'SJ', color: '#00aaff' },
+            'ESFJ': { cluster: 'SJ', color: '#00aaff' },
+            'ISTP': { cluster: 'SP', color: '#ffaa00' },
+            'ISFP': { cluster: 'SP', color: '#ffaa00' },
+            'ESTP': { cluster: 'SP', color: '#ffaa00' },
+            'ESFP': { cluster: 'SP', color: '#ffaa00' },
+            'INFJ': { cluster: 'NF', color: '#00cc88' },
+            'INFP': { cluster: 'NF', color: '#00cc88' },
+            'ENFJ': { cluster: 'NF', color: '#00cc88' },
+            'ENFP': { cluster: 'NF', color: '#00cc88' },
+            'INTJ': { cluster: 'NT', color: '#aa55ff' },
+            'INTP': { cluster: 'NT', color: '#aa55ff' },
+            'ENTJ': { cluster: 'NT', color: '#aa55ff' },
+            'ENTP': { cluster: 'NT', color: '#aa55ff' }
+        };
+
+        // State management
+        let memberCount = 1;
+        let teamData = [];
+        let graphData = null;
+        let simulation = null;
+
+        /**
+         * OpenRouter 経由で Horizon Alpha (openrouter/horizon-alpha) を呼び出す
+         */
+        async function callHorizonAlpha(messages) {
+            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer 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"
+                },
+                body: JSON.stringify({
+                    model: "openrouter/horizon-beta",
+                    messages,
+                    temperature: 0.7,
+                    max_tokens: 2000
+                })
+            });
+            const data = await res.json();
+            return data.choices?.[0]?.message?.content ?? "⚠️ エラーが発生しました";
+        }
+
+        // Show/hide loader
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Add member functionality
+        document.getElementById('add-member').addEventListener('click', () => {
+            if (memberCount >= 20) {
+                showToast('チームメンバーは最大20名までです 🚫');
+                return;
+            }
+            
+            memberCount++;
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'member-input';
+            memberDiv.style.animation = 'fadeInScale 0.5s ease-out';
+            memberDiv.innerHTML = `
+                <label>名前</label>
+                <input type="text" class="member-name" placeholder="メンバー${memberCount}">
+                
+                <label>MBTI</label>
+                <select class="member-mbti">
+                    <option value="">選択してください</option>
+                    <option value="INTJ">INTJ - 建築家</option>
+                    <option value="INTP">INTP - 論理学者</option>
+                    <option value="ENTJ">ENTJ - 指揮官</option>
+                    <option value="ENTP">ENTP - 討論者</option>
+                    <option value="INFJ">INFJ - 提唱者</option>
+                    <option value="INFP">INFP - 仲介者</option>
+                    <option value="ENFJ">ENFJ - 主人公</option>
+                    <option value="ENFP">ENFP - 広報運動家</option>
+                    <option value="ISTJ">ISTJ - 管理者</option>
+                    <option value="ISFJ">ISFJ - 擁護者</option>
+                    <option value="ESTJ">ESTJ - 幹部</option>
+                    <option value="ESFJ">ESFJ - 領事</option>
+                    <option value="ISTP">ISTP - 巨匠</option>
+                    <option value="ISFP">ISFP - 冒険家</option>
+                    <option value="ESTP">ESTP - 起業家</option>
+                    <option value="ESFP">ESFP - エンターテイナー</option>
+                </select>
+                
+                <label>役職/偉さ (1-5)</label>
+                <input type="number" class="member-rank" min="1" max="5" value="3">
+                
+                <label>写真URL (オプション)</label>
+                <input type="url" class="member-photo" placeholder="https://example.com/photo.jpg">
+            `;
+            document.getElementById('members-container').appendChild(memberDiv);
+        });
+
+        // Collect team data
+        function collectTeamData() {
+            const members = [];
+            const memberInputs = document.querySelectorAll('.member-input');
+            
+            memberInputs.forEach((div, index) => {
+                const name = div.querySelector('.member-name').value || `メンバー${index + 1}`;
+                const mbti = div.querySelector('.member-mbti').value;
+                const rank = parseInt(div.querySelector('.member-rank').value) || 3;
+                const photo = div.querySelector('.member-photo').value;
+                
+                if (mbti) {
+                    members.push({ name, mbti, rank, photo, id: index });
+                }
+            });
+            
+            return members;
+        }
+
+        // Generate placeholder profile image
+        function generateProfileImage(name, mbti) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 80;
+            canvas.height = 80;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient with MBTI cluster color
+            const gradient = ctx.createRadialGradient(40, 40, 0, 40, 40, 40);
+            const clusterColor = mbtiClusters[mbti]?.color || '#ffffff';
+            gradient.addColorStop(0, clusterColor + '44');
+            gradient.addColorStop(1, clusterColor + '11');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 80, 80);
+            
+            // Draw initials
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px "Orbitron"';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const initials = name.substring(0, 2).toUpperCase();
+            ctx.fillText(initials, 40, 40);
+            
+            return canvas.toDataURL();
+        }
+
+        // Create force-directed graph
+        function createGraph(members) {
+            const container = d3.select('#graph-container');
+            container.selectAll('*').remove();
+            
+            const width = container.node().offsetWidth;
+            const height = container.node().offsetHeight || 500;
+            
+            const svg = container.append('svg')
+                .attr('width', width)
+                .attr('height', height);
+            
+            // Create gradient definitions for edges
+            const defs = svg.append('defs');
+            
+            const edgeGradient = defs.append('linearGradient')
+                .attr('id', 'edge-gradient')
+                .attr('gradientUnits', 'userSpaceOnUse');
+            
+            edgeGradient.append('stop')
+                .attr('offset', '0%')
+                .attr('stop-color', 'rgba(0, 255, 255, 0.8)');
+            
+            edgeGradient.append('stop')
+                .attr('offset', '100%')
+                .attr('stop-color', 'rgba(255, 0, 191, 0.8)');
+            
+            // Generate links (fully connected graph)
+            const links = [];
+            for (let i = 0; i < members.length; i++) {
+                for (let j = i + 1; j < members.length; j++) {
+                    links.push({
+                        source: members[i].id,
+                        target: members[j].id
+                    });
+                }
+            }
+            
+            // Create force simulation
+            simulation = d3.forceSimulation(members)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(150))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => 20 + d.rank * 6));
+            
+            // Add glow filter
+            const filter = defs.append('filter')
+                .attr('id', 'glow');
+            
+            filter.append('feGaussianBlur')
+                .attr('stdDeviation', '3')
+                .attr('result', 'coloredBlur');
+            
+            const feMerge = filter.append('feMerge');
+            feMerge.append('feMergeNode')
+                .attr('in', 'coloredBlur');
+            feMerge.append('feMergeNode')
+                .attr('in', 'SourceGraphic');
+            
+            // Draw links
+            const link = svg.append('g')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('class', 'link')
+                .attr('stroke', 'url(#edge-gradient)')
+                .on('click', (event, d) => {
+                    event.stopPropagation();
+                    selectEdge(d);
+                });
+            
+            // Draw nodes
+            const node = svg.append('g')
+                .selectAll('g')
+                .data(members)
+                .enter().append('g')
+                .attr('class', 'node')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+            
+            // Add images
+            node.append('clipPath')
+                .attr('id', d => `clip-${d.id}`)
+                .append('circle')
+                .attr('r', d => 25 + d.rank * 3);
+            
+            node.append('image')
+                .attr('href', d => d.photo || generateProfileImage(d.name, d.mbti))
+                .attr('width', d => (25 + d.rank * 3) * 2)
+                .attr('height', d => (25 + d.rank * 3) * 2)
+                .attr('x', d => -(25 + d.rank * 3))
+                .attr('y', d => -(25 + d.rank * 3))
+                .attr('clip-path', d => `url(#clip-${d.id})`);
+            
+            // Add border circles with rank indication
+            node.append('circle')
+                .attr('class', 'node-image')
+                .attr('r', d => 25 + d.rank * 3)
+                .attr('stroke', d => mbtiClusters[d.mbti]?.color || '#ffffff')
+                .attr('stroke-width', d => 2 + d.rank * 0.5)
+                .attr('filter', 'url(#glow)');
+            
+            // Add rank indicator
+            node.append('circle')
+                .attr('r', 8)
+                .attr('cx', d => 20 + d.rank * 2)
+                .attr('cy', d => -(20 + d.rank * 2))
+                .attr('fill', d => d.rank >= 4 ? '#ffd700' : d.rank >= 3 ? '#c0c0c0' : '#cd7f32')
+                .attr('stroke', '#000')
+                .attr('stroke-width', 1);
+            
+            node.append('text')
+                .attr('x', d => 20 + d.rank * 2)
+                .attr('y', d => -(20 + d.rank * 2))
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'middle')
+                .attr('font-size', '10px')
+                .attr('font-weight', 'bold')
+                .attr('fill', '#000')
+                .text(d => d.rank);
+            
+            // Add labels with MBTI type
+            const labelGroup = node.append('g')
+                .attr('class', 'label-group');
+            
+            labelGroup.append('text')
+                .attr('class', 'node-label')
+                .attr('y', d => 35 + d.rank * 3)
+                .text(d => d.name);
+            
+            labelGroup.append('text')
+                .attr('class', 'node-label')
+                .attr('y', d => 48 + d.rank * 3)
+                .attr('font-size', '12px')
+                .attr('fill', d => mbtiClusters[d.mbti]?.color || '#ffffff')
+                .attr('opacity', 0.8)
+                .text(d => d.mbti);
+            
+            // Update positions
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+                
+                node
+                    .attr('transform', d => `translate(${d.x},${d.y})`);
+            });
+            
+            // Drag functions
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+            
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+            
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+            
+            return { links, link };
+        }
+
+        // Edge selection handler
+        async function selectEdge(edge) {
+            // Remove previous selection
+            d3.selectAll('.link').classed('selected', false);
+            
+            // Add selection to clicked edge
+            d3.selectAll('.link')
+                .filter(d => d === edge)
+                .classed('selected', true);
+            
+            const source = teamData.find(m => m.id === edge.source.id || m.id === edge.source);
+            const target = teamData.find(m => m.id === edge.target.id || m.id === edge.target);
+            
+            if (source && target) {
+                showLoader();
+                try {
+                    const relationship = await callHorizonAlpha([
+                        {
+                            role: "system",
+                            content: `あなたはウィットに富み、やや皮肉も効かせつつも洞察力に満ちた組織コンサルタントです。
+MBTI相性の研究結果を参考に、以下の2名の関係性を日本語で300-400字程度で描写してください。
+ユーモアを交えながらも本質的な洞察を含めること。
+関係性の強み、潜在的な摩擦点、協力する際のヒントを含めてください。
+重要：必ず具体的なメンバーの名前を使って説明してください。「INTJが〜」ではなく「田中さん（INTJ）が〜」のように記述すること。
+[cnbc.com](https://www.cnbc.com/2025/08/01/human-ai-relationships-love-nomi.html)や[truity.com](https://www.truity.com/type-relationship-advisor/E/N/T/J/I/N/T/P)のような相性分析を参考に。`
+                        },
+                        {
+                            role: "user",
+                            content: `${source.name}さん（${source.mbti}）と${target.name}さん（${target.mbti}）の関係性を分析してください。`
+                        }
+                    ]);
+                    
+                    displayRelationship(relationship, source, target);
+                } catch (error) {
+                    showToast('Horizon Alpha が遠い宇宙に旅立ちました🚀');
+                } finally {
+                    hideLoader();
+                }
+            }
+        }
+
+        // Display relationship
+        function displayRelationship(content, source, target) {
+            const summaryPanel = document.getElementById('summary-panel');
+            const summaryContent = summaryPanel.querySelector('.summary-content');
+            
+            summaryContent.innerHTML = `
+                <div class="team-name">${source.name} × ${target.name}</div>
+                <div style="white-space: pre-line;">${content}</div>
+            `;
+            
+            summaryPanel.style.display = 'block';
+            summaryPanel.style.animation = 'fadeInScale 0.5s ease-out';
+        }
+
+        // Create radar chart
+        function createRadarChart(scores) {
+            const container = d3.select('#radar-chart');
+            container.selectAll('*').remove();
+            
+            // Get actual container dimensions for responsive design
+            const containerNode = container.node();
+            const containerRect = containerNode.getBoundingClientRect();
+            const width = containerRect.width || 450;
+            const height = containerRect.height || 450;
+            const margin = Math.min(width, height) * 0.13; // 13% margin
+            const radius = Math.min(width, height) / 2 - margin;
+            
+            // Add background circle
+            container.append('div')
+                .style('position', 'absolute')
+                .style('width', '100%')
+                .style('height', '100%')
+                .style('background', 'radial-gradient(circle, rgba(0, 255, 255, 0.05) 0%, transparent 70%)')
+                .style('border-radius', '50%')
+                .style('border', '2px solid rgba(0, 255, 255, 0.2)')
+                .style('box-shadow', '0 0 30px rgba(0, 255, 255, 0.2), inset 0 0 30px rgba(0, 255, 255, 0.05)');
+            
+            const svg = container.append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .style('position', 'relative')
+                .style('z-index', '2');
+            
+            const g = svg.append('g')
+                .attr('transform', `translate(${width/2},${height/2})`);
+            
+            // Scales
+            const angleScale = d3.scaleLinear()
+                .domain([0, scores.length])
+                .range([0, Math.PI * 2]);
+            
+            const radiusScale = d3.scaleLinear()
+                .domain([0, 5])
+                .range([0, radius]);
+            
+            // Grid circles with gradual opacity
+            for (let i = 1; i <= 5; i++) {
+                g.append('circle')
+                    .attr('r', radiusScale(i))
+                    .attr('fill', 'none')
+                    .attr('stroke', 'rgba(0, 255, 255, ' + (0.1 + i * 0.05) + ')')
+                    .attr('stroke-dasharray', i === 5 ? 'none' : '3,3')
+                    .attr('stroke-width', i === 5 ? 2 : 1);
+                
+                // Add score labels
+                g.append('text')
+                    .attr('x', 5)
+                    .attr('y', -radiusScale(i) + 3)
+                    .attr('font-size', '10px')
+                    .attr('fill', 'rgba(0, 255, 255, 0.5)')
+                    .text(i);
+            }
+            
+            // Grid lines
+            scores.forEach((score, i) => {
+                const angle = angleScale(i) - Math.PI / 2;
+                g.append('line')
+                    .attr('x1', 0)
+                    .attr('y1', 0)
+                    .attr('x2', Math.cos(angle) * radius)
+                    .attr('y2', Math.sin(angle) * radius)
+                    .attr('stroke', 'rgba(0, 255, 255, 0.2)');
+                
+                // Labels with responsive positioning
+                const labelDistance = radius + Math.max(15, width * 0.04);
+                const fontSize = Math.max(10, width * 0.025);
+                
+                g.append('text')
+                    .attr('x', Math.cos(angle) * labelDistance)
+                    .attr('y', Math.sin(angle) * labelDistance)
+                    .attr('text-anchor', 'middle')
+                    .attr('dominant-baseline', 'middle')
+                    .text(score.label)
+                    .style('font-size', fontSize + 'px')
+                    .style('fill', 'var(--accent-primary)')
+                    .style('font-family', 'Roboto');
+            });
+            
+            // Data area
+            const line = d3.lineRadial()
+                .angle((d, i) => angleScale(i))
+                .radius(d => radiusScale(d.value))
+                .curve(d3.curveCardinalClosed);
+            
+            // Animated data area
+            const dataPath = g.append('path')
+                .datum(scores)
+                .attr('d', line)
+                .attr('fill', 'rgba(255, 0, 191, 0.2)')
+                .attr('stroke', 'var(--accent-secondary)')
+                .attr('stroke-width', 3)
+                .attr('filter', 'url(#glow)');
+            
+            // Add animation
+            const pathLength = dataPath.node().getTotalLength();
+            dataPath
+                .attr('stroke-dasharray', pathLength)
+                .attr('stroke-dashoffset', pathLength)
+                .transition()
+                .duration(1500)
+                .ease(d3.easeCubicOut)
+                .attr('stroke-dashoffset', 0);
+            
+            // Data points
+            scores.forEach((score, i) => {
+                const angle = angleScale(i) - Math.PI / 2;
+                const x = Math.cos(angle) * radiusScale(score.value);
+                const y = Math.sin(angle) * radiusScale(score.value);
+                
+                g.append('circle')
+                    .attr('cx', x)
+                    .attr('cy', y)
+                    .attr('r', 5)
+                    .attr('fill', 'var(--accent-secondary)')
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 2);
+            });
+        }
+
+        // Analyze team
+        document.getElementById('analyze-btn').addEventListener('click', async () => {
+            teamData = collectTeamData();
+            
+            if (teamData.length < 2) {
+                showToast('最低2名のメンバーが必要です 👥');
+                return;
+            }
+            
+            showLoader();
+            
+            try {
+                // Create graph
+                const graphResult = createGraph(teamData);
+                
+                // Generate team summary
+                const teamAnalysis = await callHorizonAlpha([
+                    {
+                        role: "system",
+                        content: `あなたは洞察力に富んだ組織コンサルタントです。チームのMBTI構成と各メンバーの役職/偉さ（1-5のランク）を分析し、以下の形式で返してください：
+
+重要：分析では必ず具体的なメンバーの名前を使って説明してください。「INTJが〜」ではなく「田中さん（INTJ）が〜」のように記述すること。
+
+1. ユニークなチーム名
+2. チームの性格・雰囲気
+3. 強みと機会
+4. 課題とリスク
+5. 具体的なアクションプラン
+※メンバーのランク/偉さも考慮してイノベーション力を評価。高ランクメンバーの創造性と影響力を重視してください。
+
+評価の際の注意点：
+- イノベーション力は、単にMBTIタイプだけでなく、高ランク（4-5）のメンバーが持つ決定権と影響力も重要な要素として評価
+- 高ランクのNTタイプやNFタイプは特にイノベーションへの貢献度が高い
+- 組織階層とMBTIの相互作用を分析し、実際の革新能力を評価
+- 必ず各メンバーの名前を使って具体的に分析すること
+
+[personalitynft.com](https://personalitynft.com/personality/compatibility/mbti-chart/)や[traitlab.com](https://www.traitlab.com/blog/enfp/relationships)などの相性研究を参考に、深い洞察を提供してください。
+
+重要：分析の最後に、必ず以下の形式でスコアを記載してください：
+
+=== スコア ===
+イノベーション力: 4
+実行力: 3
+チームワーク: 5
+戦略思考: 4
+適応性: 3
+=== スコア終了 ===
+
+※上記は例です。実際のチーム構成に基づいて1-5の整数で評価してください。各スコアは必ず「項目名: 数値」の形式で記載すること。`
+                    },
+                    {
+                        role: "user",
+                        content: `以下のチームメンバーを分析してください：\n${JSON.stringify(teamData.map(m => ({ name: m.name, mbti: m.mbti, rank: m.rank })))}`
+                    }
+                ]);
+                
+                // Parse radar chart data
+                console.log('Full team analysis response length:', teamAnalysis.length);
+                console.log('First 500 chars:', teamAnalysis.substring(0, 500));
+                console.log('Last 500 chars:', teamAnalysis.substring(teamAnalysis.length - 500));
+                
+                // Try multiple patterns to find JSON
+                let jsonMatch = teamAnalysis.match(/```json\s*\n([\s\S]*?)\n\s*```/);
+                if (!jsonMatch) {
+                    jsonMatch = teamAnalysis.match(/```\s*\n([\s\S]*?)\n\s*```/);
+                }
+                if (!jsonMatch) {
+                    jsonMatch = teamAnalysis.match(/\{[\s\S]*?"scores"[\s\S]*?\}/);
+                    if (jsonMatch) {
+                        jsonMatch = [jsonMatch[0], jsonMatch[0]];
+                    }
+                }
+                
+                let radarData = [
+                    {label: "イノベーション力", value: 3},
+                    {label: "実行力", value: 3},
+                    {label: "チームワーク", value: 3},
+                    {label: "戦略思考", value: 3},
+                    {label: "適応性", value: 3}
+                ];
+                
+                if (jsonMatch && jsonMatch[1]) {
+                    console.log('JSON found:', jsonMatch[1]);
+                    try {
+                        const parsed = JSON.parse(jsonMatch[1]);
+                        if (parsed.scores && Array.isArray(parsed.scores)) {
+                            radarData = parsed.scores;
+                            console.log('Successfully parsed radar data:', radarData);
+                            
+                            // Validate the scores
+                            radarData = radarData.map(item => ({
+                                label: item.label,
+                                value: Math.max(1, Math.min(5, parseInt(item.value) || 3))
+                            }));
+                        } else {
+                            console.error('Invalid scores format:', parsed);
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse radar data:', e);
+                        console.error('JSON string was:', jsonMatch[1]);
+                    }
+                } else {
+                    console.warn('No JSON found in response. Looking for scores in text...');
+                    
+                    // First, try to find the score section
+                    const scoreSection = teamAnalysis.match(/=== スコア ===([\s\S]*?)=== スコア終了 ===/);
+                    const searchText = scoreSection ? scoreSection[1] : teamAnalysis;
+                    
+                    // Try to extract scores from text with more flexible patterns
+                    const scorePatterns = [
+                        { label: "イノベーション力", patterns: [/イノベーション力[：:\s]+(\d+)/, /イノベーション力.*?(\d+)/, /Innovation.*?(\d+)/i] },
+                        { label: "実行力", patterns: [/実行力[：:\s]+(\d+)/, /実行力.*?(\d+)/, /Execution.*?(\d+)/i] },
+                        { label: "チームワーク", patterns: [/チームワーク[：:\s]+(\d+)/, /チームワーク.*?(\d+)/, /Teamwork.*?(\d+)/i] },
+                        { label: "戦略思考", patterns: [/戦略思考[：:\s]+(\d+)/, /戦略思考.*?(\d+)/, /Strategic.*?(\d+)/i] },
+                        { label: "適応性", patterns: [/適応性[：:\s]+(\d+)/, /適応性.*?(\d+)/, /Adaptability.*?(\d+)/i] }
+                    ];
+                    
+                    let foundCount = 0;
+                    scorePatterns.forEach((scorePattern, index) => {
+                        let found = false;
+                        for (const pattern of scorePattern.patterns) {
+                            const match = searchText.match(pattern);
+                            if (match && match[1]) {
+                                const value = parseInt(match[1]);
+                                if (value >= 1 && value <= 5) {
+                                    radarData[index].value = value;
+                                    console.log(`Found ${scorePattern.label}: ${value}`);
+                                    foundCount++;
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!found) {
+                            console.warn(`Could not find score for ${scorePattern.label}, using default: 3`);
+                        }
+                    });
+                    
+                    if (scoreSection) {
+                        console.log('Score section found:', scoreSection[1]);
+                    } else {
+                        console.log('No score section found, searched entire response');
+                    }
+                    
+                    console.log(`Successfully extracted ${foundCount}/5 scores from text`);
+                    console.log('Final radar data:', radarData);
+                }
+                
+                // Store radar data for resize handling
+                window.lastRadarData = radarData;
+                
+                // Create radar chart
+                createRadarChart(radarData);
+                
+                // Display summary with better formatting
+                const summaryPanel = document.getElementById('summary-panel');
+                const summaryContent = summaryPanel.querySelector('.summary-content');
+                const cleanedAnalysis = teamAnalysis.replace(/```json[\s\S]*?```/, '').trim();
+                
+                // Parse analysis sections
+                const sections = cleanedAnalysis.split(/\n(?=\d\.\s)/g);
+                let formattedContent = '';
+                
+                sections.forEach((section, index) => {
+                    if (index === 0 && section.match(/^[^\d]/)) {
+                        // Team name
+                        formattedContent += `<div class="team-name">${section.trim()}</div>`;
+                    } else {
+                        // Other sections
+                        const titleMatch = section.match(/^\d\.\s(.+?)(?:\n|$)/);
+                        if (titleMatch) {
+                            const title = titleMatch[1];
+                            const content = section.substring(titleMatch[0].length).trim();
+                            formattedContent += `
+                                <div class="analysis-section">
+                                    <div class="analysis-title">${title}</div>
+                                    <div>${content}</div>
+                                </div>
+                            `;
+                        }
+                    }
+                });
+                
+                summaryContent.innerHTML = formattedContent;
+                summaryPanel.style.display = 'block';
+                
+                showToast('分析が完了しました! ✨');
+            } catch (error) {
+                console.error(error);
+                showToast('エラーが発生しました 🚫');
+            } finally {
+                hideLoader();
+            }
+        });
+
+        // Window resize handler
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (teamData.length > 0) {
+                    createGraph(teamData);
+                    // Recreate radar chart if it exists
+                    const summaryPanel = document.getElementById('summary-panel');
+                    if (summaryPanel.style.display === 'block') {
+                        const radarContainer = document.querySelector('#radar-chart svg');
+                        if (radarContainer) {
+                            // Get the current radar data from the chart
+                            const currentRadarData = [
+                                {label: "イノベーション力", value: 3},
+                                {label: "実行力", value: 3},
+                                {label: "チームワーク", value: 3},
+                                {label: "戦略思考", value: 3},
+                                {label: "適応性", value: 3}
+                            ];
+                            // Try to preserve current values if available
+                            createRadarChart(window.lastRadarData || currentRadarData);
+                        }
+                    }
+                }
+            }, 300);
+        });
+        
+        // Store radar data globally for resize handling
+        window.lastRadarData = null;
+    </script>
+</body>
+</html>
