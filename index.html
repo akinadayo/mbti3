@@ -654,22 +654,25 @@
             // APIキーの取得（GitHub Actionsで自動注入される）
             let apiKey = "{{OPENROUTER_API_KEY}}";
             
+            // プレースホルダー文字列を動的に作成（置換されないように）
+            const placeholder = '{{' + 'OPENROUTER_API_KEY' + '}}';
+            
             // プレースホルダーが残っている場合のフォールバック
-            if (!apiKey || apiKey === "{{OPENROUTER_API_KEY}}") {
+            if (!apiKey || apiKey === placeholder) {
                 // デバッグ情報を表示
                 console.warn('プレースホルダーが残っています。GitHub Actionsでの注入が失敗した可能性があります。');
                 
                 // 現在の状況をアラートで表示
                 console.error('GitHub Actions注入状況:', {
                     'APIキー値': apiKey,
-                    'プレースホルダーチェック': apiKey === "{{OPENROUTER_API_KEY}}",
+                    'プレースホルダーチェック': apiKey === placeholder,
                     'タイムスタンプ': new Date().toISOString()
                 });
                 
                 alert(`🔍 デバッグ情報:
                 
 現在のAPIキー値: "${apiKey}"
-プレースホルダー残存: ${apiKey === "{{OPENROUTER_API_KEY}}" ? 'Yes' : 'No'}
+プレースホルダー残存: ${apiKey === placeholder ? 'Yes' : 'No'}
                 
 GitHub Actionsでの自動注入が動作していません。
                 
