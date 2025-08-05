@@ -5,7 +5,7 @@
 
 set -e
 
-HTML_FILE="mbti3.html"
+HTML_FILE="index.html"
 TEST_API_KEY="sk-test-1234567890abcdef"
 BACKUP_FILE="${HTML_FILE}.original"
 
@@ -19,7 +19,7 @@ fi
 
 # Test the injection script
 echo "🔑 Testing API key injection with test key..."
-./scripts/inject-api-key.sh "$TEST_API_KEY"
+./scripts/inject-api-key.sh "$TEST_API_KEY" "$HTML_FILE"
 
 # Verify the test key was injected
 if grep -q "$TEST_API_KEY" "$HTML_FILE"; then

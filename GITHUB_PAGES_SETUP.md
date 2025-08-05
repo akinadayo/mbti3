@@ -73,7 +73,7 @@ GitHub ActionsがHTMLファイルに直接APIキーを注入してデプロイ�
 .github/workflows/deploy.yml    # GitHub Actionsワークフロー
 scripts/inject-api-key.sh      # APIキー注入スクリプト
 scripts/local-test.sh          # ローカルテスト用スクリプト
-mbti3.html                     # メインアプリケーション（プレースホルダー付き）
+index.html                     # メインアプリケーション（プレースホルダー付き）
 ```
 
 ### ローカルテスト

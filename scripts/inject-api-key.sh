@@ -6,7 +6,7 @@
 set -e  # Exit on any error
 
 API_KEY="$1"
-HTML_FILE="mbti3.html"
+HTML_FILE="${2:-index.html}"  # デフォルトはindex.html
 PLACEHOLDER="{{OPENROUTER_API_KEY}}"
 
 echo "🔑 Starting API key injection process..."
@@ -14,7 +14,8 @@ echo "🔑 Starting API key injection process..."
 # Validate input
 if [ -z "$API_KEY" ]; then
     echo "❌ Error: API key not provided as argument"
-    echo "Usage: $0 <api-key>"
+    echo "Usage: $0 <api-key> [html-file]"
+    echo "Default HTML file: index.html"
     exit 1
 fi
 

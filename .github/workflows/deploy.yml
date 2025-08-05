@@ -40,7 +40,7 @@ jobs:
           
           # Make script executable and run it
           chmod +x scripts/inject-api-key.sh
-          ./scripts/inject-api-key.sh "${{ secrets.OPENROUTER_API_KEY }}"
+          ./scripts/inject-api-key.sh "${{ secrets.OPENROUTER_API_KEY }}" index.html
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
