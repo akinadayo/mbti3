@@ -660,16 +660,24 @@
                 console.warn('プレースホルダーが残っています。GitHub Actionsでの注入が失敗した可能性があります。');
                 
                 // 現在の状況をアラートで表示
-                alert(`デバッグ情報:
+                console.error('GitHub Actions注入状況:', {
+                    'APIキー値': apiKey,
+                    'プレースホルダーチェック': apiKey === "{{OPENROUTER_API_KEY}}",
+                    'タイムスタンプ': new Date().toISOString()
+                });
+                
+                alert(`🔍 デバッグ情報:
                 
 現在のAPIキー値: "${apiKey}"
+プレースホルダー残存: ${apiKey === "{{OPENROUTER_API_KEY}}" ? 'Yes' : 'No'}
                 
-GitHub Actionsでの自動注入が正常に動作していません。
+GitHub Actionsでの自動注入が動作していません。
                 
-次の手順を確認してください:
-1. GitHub Secret (OPENROUTER_API_KEY) が設定されているか
-2. 最新のコードがプッシュされているか
-3. GitHub Actionsが正常に実行されているか`);
+確認事項:
+✅ GitHub Secret設定済み
+❌ ワークフローでの注入が失敗
+                
+解決方法: 最新のワークフローを確認してください`);
                 
                 // 一時的にプロンプトで入力を求める
                 apiKey = prompt('APIキーを入力してください (GitHub Secretsの設定後は不要になります):');
