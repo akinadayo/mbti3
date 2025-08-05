@@ -479,6 +479,7 @@
                 margin: 15px auto;
             }
         }
+        
     </style>
 </head>
 <body>
@@ -537,6 +538,7 @@
             <div id="radar-chart"></div>
             <div class="summary-content"></div>
         </div>
+        
     </div>
     
     <div class="loader" id="loader"></div>
@@ -648,34 +650,16 @@
          * OpenRouter 経由で Horizon Alpha (openrouter/horizon-alpha) を呼び出す
          */
         async function callHorizonAlpha(messages) {
-            // APIキーの確認（config.js または localStorage から）
-            let apiKey = null;
-            
-            // まずconfig.jsから取得を試す
-            if (window.API_CONFIG && window.API_CONFIG.OPENROUTER_API_KEY) {
-                apiKey = window.API_CONFIG.OPENROUTER_API_KEY;
-            }
-            // 次にlocalStorageから取得を試す（GitHub Pages用）
-            else if (localStorage.getItem('OPENROUTER_API_KEY')) {
-                apiKey = localStorage.getItem('OPENROUTER_API_KEY');
-            }
-            
-            if (!apiKey) {
-                const errorMsg = `
-APIキーが設定されていません。以下の方法で設定してください：
-
-方法1（ローカル）: config.jsファイルを確認
-方法2（GitHub Pages）: ブラウザのコンソールで以下を実行
-localStorage.setItem('OPENROUTER_API_KEY', 'your-api-key-here');
-                `.trim();
-                throw new Error(errorMsg);
+            // APIキーの確認
+            if (!window.API_CONFIG || !window.API_CONFIG.OPENROUTER_API_KEY) {
+                throw new Error('APIキーが設定されていません。GitHub SecretsでOPENROUTER_API_KEYを設定してください。');
             }
             
             const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`
+                    "Authorization": `Bearer ${window.API_CONFIG.OPENROUTER_API_KEY}`
                 },
                 body: JSON.stringify({
                     model: "openrouter/horizon-beta",
@@ -687,6 +671,7 @@ localStorage.setItem('OPENROUTER_API_KEY', 'your-api-key-here');
             const data = await res.json();
             return data.choices?.[0]?.message?.content ?? "⚠️ エラーが発生しました";
         }
+        
 
         // Show/hide loader
         function showLoader() {

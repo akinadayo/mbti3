@@ -48,13 +48,15 @@
 - **AI分析**: 具体的なメンバー名を使った詳細分析
 - **レスポンシブデザイン**: デスクトップ・タブレット・スマホ対応
 
-### GitHub Pages デプロイ
+### GitHub Pages デプロイ（推奨）
 
-詳細な手順は `GITHUB_PAGES_SETUP.md` を参照してください。
+#### 🚀 自動デプロイ手順
 
-#### 簡単デプロイ手順
+1. **OpenRouter APIキーを取得**
+   - [OpenRouter](https://openrouter.ai/) でアカウント作成
+   - APIキーを生成
 
-1. **リポジトリをGitHubにプッシュ**
+2. **GitHubリポジトリを作成・プッシュ**
    ```bash
    git init
    git add .
@@ -63,14 +65,19 @@
    git push -u origin main
    ```
 
-2. **GitHub Pages を有効化**
-   - Settings → Pages → Source: "Deploy from a branch" → Branch: "main"
+3. **GitHub Secrets を設定**
+   - リポジトリ → Settings → Secrets and variables → Actions
+   - New repository secret をクリック
+   - Name: `OPENROUTER_API_KEY`
+   - Secret: 取得したAPIキーを貼り付け
+   - Add secret をクリック
 
-3. **APIキーを設定**（デプロイ後）
-   ```javascript
-   // ブラウザコンソールで実行
-   localStorage.setItem('OPENROUTER_API_KEY', 'your-api-key-here');
-   ```
+4. **GitHub Pages を有効化**
+   - Settings → Pages → Source: "GitHub Actions"
+
+5. **自動デプロイ完了**
+   - GitHub ActionsがAPIキーを自動注入してデプロイ
+   - `https://yourusername.github.io/mbti-team-analyzer/` でアクセス可能
 
 ## セキュリティ
 
