@@ -20,99 +20,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Setup Node.js (for backup injection method)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+      # This workflow is now designed for a platform like Netlify or Vercel.
+      # The hosting provider will handle the build and deployment.
+      # The OPENROUTER_API_KEY secret should be set as an environment variable
+      # in the hosting provider's settings, not in GitHub Actions.
       
-      - name: Inject API key into HTML
-        env:
-          API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Verify Files for Deployment
         run: |
-          # Enhanced debugging
-          echo "🔍 Environment check:"
-          echo "Repository: $GITHUB_REPOSITORY"
-          echo "Actor: $GITHUB_ACTOR"
-          echo "Event: $GITHUB_EVENT_NAME"
+          echo "✅ Verifying key files for serverless deployment:"
+          ls -l
+          echo "---"
+          ls -l netlify/functions
           
-          # Check if API key secret exists using environment variable
-          if [ -z "$API_KEY" ]; then
-            echo "❌ Error: OPENROUTER_API_KEY secret not found or empty!"
-            echo "Secret length: ${#API_KEY}"
-            echo "Please verify:"
-            echo "1. Repository → Settings → Secrets and variables → Actions"
-            echo "2. Check that 'OPENROUTER_API_KEY' exists (exact spelling)"
-            echo "3. Verify the secret value starts with 'sk-or-v1-'"
-            exit 1
-          fi
-          
-          echo "✅ Secret found (length: ${#API_KEY} characters)"
-          echo "✅ Secret prefix: ${API_KEY:0:10}..."
-          
-          echo "🔍 Before injection:"
+          # The placeholder should no longer exist in index.html
           if grep -q "{{OPENROUTER_API_KEY}}" index.html; then
-            echo "✅ Placeholder found in index.html"
-            grep -n "{{OPENROUTER_API_KEY}}" index.html
-          else
-            echo "❌ Placeholder not found in index.html!"
-            echo "File contents preview:"
-            head -20 index.html
-            exit 1
-          fi
-          
-          # Create backup
-          cp index.html index.html.backup
-          
-          # Try sed method first
-          echo "🔧 Attempting sed injection method..."
-          sed -i "s|{{OPENROUTER_API_KEY}}|$API_KEY|g" index.html
-          
-          # Check if sed worked
-          if grep -q "{{OPENROUTER_API_KEY}}" index.html; then
-            echo "⚠️ sed method failed, trying Node.js method..."
-            # Restore from backup and try Node.js method
-            cp index.html.backup index.html
-            node scripts/inject-api-key.js
-          else
-            echo "✅ sed method succeeded"
-          fi
-          
-          echo "🔍 Final verification:"
-          # Check if placeholder still exists (should not)
-          if grep -q "{{OPENROUTER_API_KEY}}" index.html; then
-            echo "❌ Error: Placeholder still exists after all injection attempts!"
-            echo "Remaining placeholders:"
-            grep -n "{{OPENROUTER_API_KEY}}" index.html
-            echo "Diff from backup:"
-            diff index.html.backup index.html || true
+            echo "❌ Error: API key placeholder found in index.html. It should have been removed."
             exit 1
           else
-            echo "✅ All placeholders successfully replaced"
+            echo "✅ API key placeholder is correctly removed from index.html."
           fi
           
-          # Verify API key pattern exists
-          if grep -q "sk-or-v1-" index.html; then
-            echo "✅ API key pattern found in file"
-            # Count how many times the API key appears
-            api_count=$(grep -o "sk-or-v1-" index.html | wc -l)
-            echo "✅ API key appears $api_count times in file"
-          else
-            echo "❌ Error: Expected API key pattern not found!"
-            echo "This suggests the injection failed completely."
-            exit 1
-          fi
-          
-          # Clean up backup
-          rm index.html.backup
-      
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-      
-      - name: Upload to GitHub Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          echo "✅ Verification complete. Ready for deployment to a serverless platform."
