@@ -943,76 +943,38 @@
         let selectedTheme = null; // Store selected theme for action plan
 
         /**
-         * OpenRouter 経由で Horizon Alpha (openrouter/horizon-alpha) を呼び出す
+         * サーバーレスプロキシ経由でHorizon Alphaを呼び出す
          */
         async function callHorizonAlpha(messages) {
-            // APIキーの取得（GitHub Actionsで自動注入される）
-            let apiKey = "{{OPENROUTER_API_KEY}}";
-            
-            // プレースホルダー文字列を動的に作成（置換されないように）
-            const placeholder = '{{' + 'OPENROUTER_API_KEY' + '}}';
-            
-            // プレースホルダーが残っている場合のフォールバック
-            if (!apiKey || apiKey === placeholder) {
-                // デバッグ情報を表示
-                console.warn('プレースホルダーが残っています。GitHub Actionsでの注入が失敗した可能性があります。');
-                
-                // 現在の状況をアラートで表示
-                console.error('GitHub Actions注入状況:', {
-                    'APIキー値': apiKey,
-                    'プレースホルダーチェック': apiKey === placeholder,
-                    'タイムスタンプ': new Date().toISOString()
+            try {
+                const res = await fetch("/api/horizon", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "openrouter/horizon-beta",
+                        messages,
+                        temperature: 0.7,
+                        max_tokens: 2000
+                    })
                 });
-                
-                alert(`🔍 デバッグ情報:
-                
-現在のAPIキー値: "${apiKey}"
-プレースホルダー残存: ${apiKey === placeholder ? 'Yes' : 'No'}
-                
-GitHub Actionsでの自動注入が動作していません。
-                
-確認事項:
-✅ GitHub Secret設定済み
-❌ ワークフローでの注入が失敗
-                
-解決方法: 最新のワークフローを確認してください`);
-                
-                // 一時的にプロンプトで入力を求める
-                apiKey = prompt('APIキーを入力してください (GitHub Secretsの設定後は不要になります):');
-                
-                if (!apiKey) {
-                    const errorMsg = `GitHub SecretsでOPENROUTER_API_KEYを設定してください。
 
-設定手順:
-1. リポジトリの Settings → Secrets and variables → Actions
-2. New repository secret をクリック
-3. Name: OPENROUTER_API_KEY
-4. Secret: あなたのOpenRouter APIキー
-5. プッシュして再デプロイ`;
-                    showToast('❌ APIキーが必要です');
-                    throw new Error(errorMsg);
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    console.error("API Error:", errorData);
+                    showToast(`❌ APIエラー: ${errorData.error || '不明なエラー'}`);
+                    return "⚠️ 分析中にエラーが発生しました。";
                 }
-                
-                // 入力されたAPIキーをlocalStorageに保存（次回用）
-                localStorage.setItem('temp_api_key', apiKey);
-                showToast('✅ 一時的にAPIキーを設定しました。GitHub Secretsの設定をお忘れなく！');
+
+                const data = await res.json();
+                return data.choices?.[0]?.message?.content ?? "⚠️ 結果の取得に失敗しました。";
+
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                showToast('❌ サーバーへの接続に失敗しました。');
+                return "⚠️ サーバーに接続できませんでした。";
             }
-            
-            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "openrouter/horizon-beta",
-                    messages,
-                    temperature: 0.7,
-                    max_tokens: 2000
-                })
-            });
-            const data = await res.json();
-            return data.choices?.[0]?.message?.content ?? "⚠️ エラーが発生しました";
         }
         
 

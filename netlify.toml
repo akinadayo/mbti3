@@ -1,0 +1,20 @@
+# Netlify configuration file
+
+[build]
+  # This command is not strictly necessary for a static site, but good practice.
+  # We don't have a build step, so we can leave it empty or use a placeholder.
+  command = "echo 'No build command'"
+
+  # The directory that contains the deploy-ready HTML files and assets.
+  publish = "."
+
+  # The directory where our serverless functions are located.
+  functions = "netlify/functions"
+
+# Redirect rule to make our function accessible at a cleaner URL.
+# This makes it so we can call `/api/horizon` from the frontend
+# instead of `/.netlify/functions/horizon`.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
